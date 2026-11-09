@@ -1,16 +1,196 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bolívar Eco-Calculator</title>
 </head>
-
 <body>
-
-    <h1>Bolívar Eco-Calculator</h1>
-
+<h1>Bolívar Eco-Calculator</h1>
+<p>Calcula tu impacto ambiental semanal y descubre cuántos Eco-Points puedes obtener.</p>
+<h2>Environmental Impact Calculator</h2>
+<form id="ecoForm">
+    <!-- TRANSPORTATION -->
+    <label for="transport">Medio de transporte:</label>
+    <select id="transport" required>
+        <option value="">Selecciona una opción</option>
+        <option value="bus">Bus</option>
+        <option value="private">Carro privado</option>
+        <option value="shared">Carro compartido</option>
+        <option value="active">Bicicleta / Caminando</option>
+    </select>
+    <br><br>
+    <!-- DISTANCE -->
+    <label for="distance">Distancia diaria recorrida (km):</label>
+    <input type="number" id="distance" min="0" step="0.1" required>
+    <br><br>
+    <!-- PAPER -->
+    <label for="paper">Cantidad de hojas de papel utilizadas al día:</label>
+    <input type="number" id="paper" min="0" step="1" required>
+    <br><br>
+    <!-- RECYCLING -->
+    <label for="recycling">Nivel de reciclaje:</label>
+    <select id="recycling" required>
+        <option value="">Selecciona una opción</option>
+        <option value="low">Bajo</option>
+        <option value="medium">Medio</option>
+        <option value="high">Alto</option>
+    </select>
+    <br><br>
+    <button type="submit">Calcular impacto ambiental</button>
+</form>
+<hr>
+<!-- RESULTS -->
+<section id="results" style="display: none;">
+    <h2>Resultados de tu impacto ambiental</h2>
+    <p>
+        Emisiones semanales de CO₂:
+        <strong id="co2Result"></strong> kg
+    </p>
+    <p>
+        Eco-Points obtenidos:
+        <strong id="pointsResult"></strong> / 100
+    </p>
+    <p id="message"></p>
+</section>
+<script>
+    // ==========================================
+    // 1. ENVIRONMENTAL CONSTANTS
+    // ==========================================
+    const SCHOOL_DAYS = 5;
+    // Estimated CO2 emissions per passenger-kilometer (kg CO2e)
+    const TRANSPORT_EMISSIONS = {
+        bus: 0.089,
+        private: 0.192,
+        shared: 0.096,
+        active: 0
+    };
+    // Estimated CO2 emissions per sheet of paper (kg CO2e)
+    const PAPER_EMISSION = 0.005;
+    // Estimated reduction associated with recycling levels
+    const RECYCLING_REDUCTION = {
+        low: 0,
+        medium: 0.15,
+        high: 0.30
+    };
+    // ==========================================
+    // 2. FORM PROCESSING
+    // ==========================================
+    document.getElementById("ecoForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        // Get user inputs
+        const transport = document.getElementById("transport").value;
+        const distance = Number(document.getElementById("distance").value);
+        const paper = Number(document.getElementById("paper").value);
+        const recycling = document.getElementById("recycling").value;
+        // ==========================================
+        // 3. INPUT VALIDATION
+        // ==========================================
+        if (
+            !transport ||
+            !recycling ||
+            distance < 0 ||
+            paper < 0 ||
+            !Number.isFinite(distance) ||
+            !Number.isInteger(paper)
+        ) {
+            alert("Por favor, introduce valores válidos.");
+            return;
+        }
+        // ==========================================
+        // 4. TRANSPORT EMISSIONS
+        // ==========================================
+        const dailyTransportCO2 =
+            distance * TRANSPORT_EMISSIONS[transport];
+        const weeklyTransportCO2 =
+            dailyTransportCO2 * SCHOOL_DAYS;
+        // ==========================================
+        // 5. PAPER EMISSIONS
+        // ==========================================
+        const dailyPaperCO2 =
+            paper * PAPER_EMISSION;
+        const weeklyPaperCO2 =
+            dailyPaperCO2 * SCHOOL_DAYS;
+        // ==========================================
+        // 6. RECYCLING REDUCTION
+        // ==========================================
+        const recyclingFactor =
+            RECYCLING_REDUCTION[recycling];
+        const adjustedPaperCO2 =
+            weeklyPaperCO2 * (1 - recyclingFactor);
+        // ==========================================
+        // 7. TOTAL WEEKLY CO2 EMISSIONS
+        // ==========================================
+        const totalWeeklyCO2 =
+            weeklyTransportCO2 + adjustedPaperCO2;
+        // ==========================================
+        // 8. ECO-POINTS CALCULATION
+        // ==========================================
+        let transportPoints = 0;
+        switch (transport) {
+            case "active":
+                transportPoints = 40;
+                break;
+            case "bus":
+                transportPoints = 35;
+                break;
+            case "shared":
+                transportPoints = 30;
+                break;
+            case "private":
+                transportPoints = 15;
+                break;
+        }
+        // Paper points: fewer sheets = more points
+        let paperPoints = 0;
+        if (paper <= 2) {
+            paperPoints = 30;
+        } else if (paper <= 5) {
+            paperPoints = 25;
+        } else if (paper <= 10) {
+            paperPoints = 15;
+        } else if (paper <= 15) {
+            paperPoints = 10;
+        } else {
+            paperPoints = 5;
+        }
+        // Recycling points
+        let recyclingPoints = 0;
+        switch (recycling) {
+            case "low":
+                recyclingPoints = 5;
+                break;
+            case "medium":
+                recyclingPoints = 15;
+                break;
+            case "high":
+                recyclingPoints = 30;
+                break;
+        }
+        // Final Eco-Points
+        const totalEcoPoints =
+            transportPoints + paperPoints + recyclingPoints;
+        // ==========================================
+        // 9. DISPLAY RESULTS
+        // ==========================================
+        document.getElementById("co2Result").textContent =
+            totalWeeklyCO2.toFixed(3);
+        document.getElementById("pointsResult").textContent =
+            totalEcoPoints;
+        // Environmental feedback
+        let message = "";
+        if (totalEcoPoints >= 85) {
+            message = "¡Excelente! Tus hábitos son muy sostenibles.";
+        } else if (totalEcoPoints >= 65) {
+            message = "¡Buen trabajo! Puedes seguir mejorando tus hábitos ambientales.";
+        } else if (totalEcoPoints >= 45) {
+            message = "Tu impacto ambiental puede mejorar. Intenta utilizar alternativas más sostenibles.";
+        } else {
+            message = "Es momento de adoptar hábitos más ecológicos y reducir tu huella de carbono.";
+        }
+        document.getElementById("message").textContent = message;
+        document.getElementById("results").style.display = "block";
+    });
+</script>
 </body>
-
 </html>
